@@ -23,3 +23,60 @@ output:
 Niche breadth for beneficiary species facilitated by cushion plants will be greater than other non-foundation associated species, and climate is an important mediator.
 
 
+```{r}
+### Load libraries
+library(dplyr)
+library(tidyr)
+library(rgbif)
+```
+
+### extract species occurrences
+```{r}
+## load data
+species.data <- read.csv("data/species_list.csv")
+
+## number of unique species
+spp.list <- unique(species.data$species)
+
+spp.list <- as.character(spp.list) ## turn text into characters
+spp.list <- strsplit(spp.list, "_") ## remove underscore that sepatates species and genus
+
+species.names <- data.frame()
+for(i in 1:length(spp.list)) {
+  species.names[i,"genus"] <- unlist(spp.list[i])[1]
+  species.names[i,"species"] <- unlist(spp.list[i])[2]
+}
+
+spnames.refined <- subset(species.names, species!="sp" & species!="sp1" & species!="sp2" & species!="sp3" & species!="sp4" & species!="sp5" & species!="sp6" & species!="sp7" & species!="sp8" & species!="sp9") ## remove unknown species
+spnames.refined <- spnames.refined[!duplicated(spnames.refined), ] ## remove duplicates
+
+## define genus and species
+genus <- spnames.refined$genus
+species <- spnames.refined$species
+
+## download occurrences
+for(i in 1:length(genus))
+{
+key <- name_backbone(name=paste(genus[i],species[i]))$speciesKey ## extract species key from gbif
+temp <- occ_data(taxonKey = key, hasCoordinate =T)## extract species name from GBIF server
+temp <- data.frame(lon=temp$data$decimalLongitude,lat=temp$data$decimalLatitude,species.name=temp$data$name)
+temp <- temp[!duplicated(temp), ]  ## duplicated occurences
+if(nrow(temp)==0) next ## skip if no occurrences found
+write.csv(temp, paste("data//occurrences//",genus[i],".",species[i], ".occurrence.csv",sep=""),row.names=F) ##write csv with species occurences
+print(i)
+}
+```
+
+### extract climate data
+```{r}
+
+r1 <- raster("rasters\\bio 1.tif") #annual temp
+r2 <- raster("rasters\\bio 4.tif") #temperature seasonality
+r3 <- raster("rasters\\bio 12.tif") #annual precipitation
+r4 <- raster("rasters\\bio 15.tif") #precipitation seasonality
+
+clim.stack <- stack(r1,r2,r3,r4)
+names(clim.stack) <- c("Temp","Temp.Var","Precip","Precip.Var")
+
+```
+
