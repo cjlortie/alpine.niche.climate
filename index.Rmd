@@ -23,7 +23,7 @@ output:
 Niche breadth for beneficiary species facilitated by cushion plants will be greater than other non-foundation associated species, and climate is an important mediator.
 
 
-```{r}
+```{r warning=FALSE, message=FALSE}
 ### Load libraries
 library(dplyr)
 library(tidyr)
@@ -119,5 +119,74 @@ library(dismo)
 # 
 # write.csv(indval$B, "data//indicator.analysis.csv")
 # 
-# write.csv(summary(indval), "data//ISA.summary.csv")
+# write.csv(indval$sign, "data//ISA.summary.csv")
 
+
+```
+
+```{r}
+
+##aggregate species association and climate data
+
+data.stat <- read.csv("data//indicator.analysis.csv")
+data.sign <- read.csv("data//ISA.summary.csv")
+data.association <- cbind(data.stat,data.sign[,2:6])
+names(data.association)[1] <- "species.name"
+
+spp.list <- as.character(data.association$species.name) ## turn text into characters
+spp.list <- strsplit(spp.list, "_") ## remove underscore that sepatates species and genus
+
+species.names <- data.frame()
+for(i in 1:length(spp.list)) {
+  species.names[i,"genus"] <- unlist(spp.list[i])[1]
+  species.names[i,"species"] <- unlist(spp.list[i])[2]
+}
+
+# define genus and species
+data.association[,"genus"] <- species.names$genus
+data.association[,"species"] <- species.names$species
+data.association[,"species.name"] <- paste(species.names$genus,".",species.names$species, sep="")
+
+clim.data <- read.csv("data//climate.data.csv")
+names(clim.data)[1] <- "species.name" ## rename species column
+
+## combine species occurrences with climate data
+all.data <- merge(clim.data,data.association, by="species.name")
+
+```
+
+### Data Visulization
+```{r}
+library(ggplot2)
+
+## compare stat against variables
+plot(all.data$Temp, all.data$cushion)
+
+## temperature
+ggplot(subset(all.data, index=2), aes(x=Temp,y=open, colour="Red")) +stat_smooth(method="lm", formula="y~x") + geom_point() + theme_classic()
+
+ggplot(subset(all.data, index=1), aes(x=Temp,y=cushion, colour="Red")) +stat_smooth(method="lm", formula="y~x") + geom_point() + theme_classic()
+
+## teperature variation
+ggplot(subset(all.data, index=2), aes(x=Temp.Var,y=open, colour="Red")) +stat_smooth(method="lm", formula="y~x") + geom_point() + theme_classic()
+
+m1 <- glm(open~Temp.Var,  data=subset(all.data, open >0 & index==2), family="Gamma")
+anova(m1, test="F")
+
+ggplot(subset(all.data, index=1), aes(x=Temp.Var,y=cushion, colour="Red")) +stat_smooth(method="lm", formula="y~x") + geom_point() + theme_classic()
+m2 <- glm(cushion~Temp.Var,  data=subset(all.data, cushion >0 & index==1), family="Gamma")
+anova(m2, test="F")
+
+##precipitation variation
+ggplot(subset(all.data, index=1), aes(x=Precip.Var,y=cushion, colour="Red")) +stat_smooth(method="lm", formula="y~x") + geom_point() + theme_classic()
+m3 <- glm(cushion~Precip.Var,  data=subset(all.data, cushion >0 & index==1), family="Gamma")
+anova(m3, test="F")
+
+ggplot(subset(all.data, index=2), aes(x=Precip.Var,y=open, colour="Red")) +stat_smooth(method="lm", formula="y~x") + geom_point() + theme_classic()
+m4 <- glm(open~Precip.Var,  data=subset(all.data, open >0 & index==2), family="Gamma")
+anova(m4, test="F")
+
+
+## compare variables and see cushion-open association
+
+ggplot(all.data, aes(x=Temp,y=Temp.Var)) + geom_point(col=all.data$index)
