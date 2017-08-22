@@ -28,7 +28,7 @@ Niche breadth for beneficiary species facilitated by cushion plants will be grea
 library(dplyr)
 library(tidyr)
 library(rgbif)
-
+library(vegan)
 library(raster)
 library(rgdal)
 library(dismo)
@@ -38,22 +38,22 @@ library(dismo)
 ```{r}
 ## load data
 # species.data <- read.csv("data/species_list.csv")
-# 
+#
 # ## number of unique species
 # spp.list <- unique(species.data$species)
-# 
+#
 # spp.list <- as.character(spp.list) ## turn text into characters
 # spp.list <- strsplit(spp.list, "_") ## remove underscore that sepatates species and genus
-# 
+#
 # species.names <- data.frame()
 # for(i in 1:length(spp.list)) {
 #   species.names[i,"genus"] <- unlist(spp.list[i])[1]
 #   species.names[i,"species"] <- unlist(spp.list[i])[2]
 # }
-# 
+#
 # spnames.refined <- subset(species.names, species!="sp" & species!="sp1" & species!="sp2" & species!="sp3" & species!="sp4" & species!="sp5" & species!="sp6" & species!="sp7" & species!="sp8" & species!="sp9") ## remove unknown species
 # spnames.refined <- spnames.refined[!duplicated(spnames.refined), ] ## remove duplicates
-# 
+#
 # ## define genus and species
 # genus <- spnames.refined$genus
 # species <- spnames.refined$species
@@ -74,10 +74,10 @@ library(dismo)
 ### extract climate data
 ```{r}
 
-# r1 <- raster("C:\\Users\\Alessandro\\Downloads\\worldclim2\\bio1.tif") #annual temp
-# r2 <- raster("C:\\Users\\Alessandro\\Downloads\\worldclim2\\bio4.tif") #temperature seasonality
-# r3 <- raster("C:\\Users\\Alessandro\\Downloads\\worldclim2\\bio12.tif") #annual precipitation
-# r4 <- raster("C:\\Users\\Alessandro\\Downloads\\worldclim2\\bio15.tif") #precipitation seasonality
+# r1 <- raster("C:\\Data\\World Clim\\bio_1.bil") #annual temp
+# r2 <- raster("C:\\Data\\World Clim\\bio_4.bil") #temperature seasonality
+# r3 <- raster("C:\\Data\\World Clim\\bio_12.bil") #annual precipitation
+# r4 <- raster("C:\\Data\\World Clim\\bio_15.bil") #precipitation seasonality
 # 
 # clim.stack <- stack(r1,r2,r3,r4)
 # names(clim.stack) <- c("Temp","Temp.Var","Precip","Precip.Var")
@@ -91,13 +91,14 @@ library(dismo)
 # 
 # climate.data <- data.frame()
 # 
+# 
 # for(i in 1:length(occurdat)){
 # temp <- read.csv(occurdat[i])
 # gps <- temp[,1:2]
 # coordinates(gps) <- ~lon+lat
 # proj4string(gps) <- crs.world
 # clim.vars <- extract(clim.stack, gps)
-# clim.means <- colMeans(clim.vars) ## means for each variable
+# clim.means <- colMeans(clim.vars, na.rm=T) ## means for each variable
 # clim.means <- data.frame(rbind(clim.means)) ## convert into dataframe
 # spp.name <- basename(occurdat[i]) ## get filename and remove directory
 # rownames(clim.means) <- substr(spp.name, 1, nchar(spp.name)-15) ## drop file extension and "occurrence"
@@ -105,6 +106,18 @@ library(dismo)
 # print(i)
 # }
 # 
-# write.csv(climate.data, "climate.data.csv")
+# write.csv(climate.data, "data//climate.data.csv")
 ```
+
+### Calculate cushion association index
+```{r}
+# data.spp <- read.csv("data//species.association.csv")
+# data.spp[data.spp$microsite=="open ","microsite"] <- "open" ## edit error on open with space
+# data.spp[,"microsite"] <- factor(data.spp$microsite)
+# 
+# indval <- multipatt(data.spp[,6:1039], data.spp$microsite,control = how(nperm=999))
+# 
+# write.csv(indval$B, "data//indicator.analysis.csv")
+# 
+# write.csv(summary(indval), "data//ISA.summary.csv")
 
