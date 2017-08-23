@@ -159,6 +159,9 @@ all.data <- merge(clim.data,data.association, by="species.name")
 ```{r}
 library(ggplot2)
 
+## psuedo rsquared
+rsq.glm <- function(x) { 1-(x$deviance/x$null.deviance)}
+
 ## compare stat against variables
 plot(all.data$Temp, all.data$cushion)
 
@@ -172,20 +175,23 @@ ggplot(subset(all.data, index=2), aes(x=Temp.Var,y=open, colour="Red")) +stat_sm
 
 m1 <- glm(open~Temp.Var,  data=subset(all.data, open >0 & index==2), family="Gamma")
 anova(m1, test="F")
+rsq.glm(m1)
 
 ggplot(subset(all.data, index=1), aes(x=Temp.Var,y=cushion, colour="Red")) +stat_smooth(method="lm", formula="y~x") + geom_point() + theme_classic()
 m2 <- glm(cushion~Temp.Var,  data=subset(all.data, cushion >0 & index==1), family="Gamma")
 anova(m2, test="F")
+rsq.glm(m2)
 
 ##precipitation variation
 ggplot(subset(all.data, index=1), aes(x=Precip.Var,y=cushion, colour="Red")) +stat_smooth(method="lm", formula="y~x") + geom_point() + theme_classic()
 m3 <- glm(cushion~Precip.Var,  data=subset(all.data, cushion >0 & index==1), family="Gamma")
 anova(m3, test="F")
+rsq.glm(m3)
 
 ggplot(subset(all.data, index=2), aes(x=Precip.Var,y=open, colour="Red")) +stat_smooth(method="lm", formula="y~x") + geom_point() + theme_classic()
 m4 <- glm(open~Precip.Var,  data=subset(all.data, open >0 & index==2), family="Gamma")
 anova(m4, test="F")
-
+rsq.glm(m4)
 
 ## compare variables and see cushion-open association
 
